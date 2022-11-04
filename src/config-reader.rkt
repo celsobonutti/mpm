@@ -6,9 +6,11 @@
   (name file-list version#)
   #:guard (λ(name file-list version# type-name)
             (cond [(not (list? file-list)) (error "File list is not a list")]
-                  [(not (name? name) (error "Invalid name for package"))]
-                  [(not (version#? version#)) (error "Invalid version number")]
+                  [(not (name? name)) (error "Invalid name for package")]
+                  [(not (unknown->version# version#)) (error "Invalid version number")]
                   [else (values name file-list version#)])))
+
+;; Validate package name
 
 (define (name? name)
   (cond [(string? name) (valid-package-name? name)]
@@ -42,7 +44,7 @@
       [(list major) (version# major 0 0)]
       [(list major minor) (version# major minor 0)]
       [(list major minor patch) (version# major minor patch)]
-      [else (error "Invalid version")]))
+      [else #f]))
 
   (cond [(string? unk) (get-parts unk)]
         [(symbol? unk) (get-parts (symbol->string unk))]
@@ -56,7 +58,17 @@
                   [(not (integer? patch)) (error "Patch is not an integer")]
                   [else (values major minor patch)])))
 
+;; Reader
 
+(define (extract-from-hash hash . rest)
+  (apply values (map (curry hash-ref hash) rest)))
+
+(define (read-config path)
+  (let*-values ([(file) (open-input-file path)]
+                [(contents) (read file)]
+                [(content-hash) (make-hash contents)]
+                [(name files version) (extract-from-hash content-hash 'name 'files 'version)])
+        (package name files version)))
 
 ;; Test
 
@@ -73,3 +85,7 @@
 (check-true (version#? (unknown->version# '1.1.0)))
 (check-true (version#? (unknown->version# "1")))
 (check-true (version#? (unknown->version# "1.1")))
+
+(check-true (package? (package 'my-package '() '1.0.0)))
+
+(check-true (package? (read-config "../example/test.mpm")))

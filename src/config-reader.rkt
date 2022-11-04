@@ -8,7 +8,7 @@
             (cond [(not (list? file-list)) (error "File list is not a list")]
                   [(not (name? name)) (error "Invalid name for package")]
                   [(not (unknown->version# version#)) (error "Invalid version number")]
-                  [else (values name file-list version#)])))
+                  [else (values (name? name) file-list (unknown->version# version#))])))
 
 ;; Validate package name
 
@@ -56,7 +56,22 @@
             (cond [(not (integer? major)) (error "Major is not an integer")]
                   [(not (integer? minor)) (error "Minor is not an integer")]
                   [(not (integer? patch)) (error "Patch is not an integer")]
-                  [else (values major minor patch)])))
+                  [else (values major minor patch)]))
+  #:methods
+  gen:equal+hash
+  [(define (equal-proc a b equal?-recur)
+     (and (equal?-recur (version#-major a) (version#-major b))
+          (equal?-recur (version#-minor a) (version#-minor b))
+          (equal?-recur (version#-patch a) (version#-patch b))))
+   (define (hash-proc a hash-recur)
+     (+ (hash-recur (version#-major a))
+        (* 3 (hash-recur (version#-minor a)))
+        (* 9 (hash-recur (version#-patch a)))))
+   (define (hash2-proc a hash2-recur)
+     (+ (hash2-recur (version#-major a))
+        (hash2-recur (version#-minor a))
+        (hash2-recur (version#-patch a))0))])
+
 
 ;; Reader
 
@@ -89,3 +104,10 @@
 (check-true (package? (package 'my-package '() '1.0.0)))
 
 (check-true (package? (read-config "../example/test.mpm")))
+(check-true (let* ([stdlib (read-config "../example/test.mpm")]
+                   [name (package-name stdlib)]
+                   [files (package-file-list stdlib)]
+                   [version (package-version# stdlib)])
+              (and (string=? name "std")
+                   (null? files)
+                   (equal? version (version# 1 0 0)))))

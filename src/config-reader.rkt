@@ -5,10 +5,21 @@
 (struct package
   (name file-list version#)
   #:guard (λ(name file-list version# type-name)
-            (cond [(not (list? file-list)) (error "File list is not a list")]
-                  [(not (name? name)) (error "Invalid name for package")]
-                  [(not (unknown->version# version#)) (error "Invalid version number")]
-                  [else (values (name? name) file-list (unknown->version# version#))])))
+            (let ([valid-file-list (file-list? file-list)]
+                  [valid-name (name? name)]
+                  [valid-version# (unknown->version# version#)])
+              (cond [(not valid-file-list) (error "File list is not a list")]
+                    [(not valid-name) (error "Invalid name for package")]
+                    [(not valid-version#) (error "Invalid version number")]
+                    [else (values valid-name valid-file-list valid-version#)]))))
+
+;; Validate file list
+
+(define (file-list? files)
+  (if (list? files)
+      files
+      #f))
+
 
 ;; Validate package name
 

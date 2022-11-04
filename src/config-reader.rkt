@@ -6,11 +6,11 @@
   (name file-list version#)
   #:guard (λ(name file-list version# type-name)
             (let ([valid-file-list (file-list? file-list)]
-                  [valid-name (name? name)]
-                  [valid-version# (unknown->version# version#)])
+                  [valid-name      (name? name)]
+                  [valid-version#  (unknown->version# version#)])
               (cond [(not valid-file-list) (error "File list is not a list")]
-                    [(not valid-name) (error "Invalid name for package")]
-                    [(not valid-version#) (error "Invalid version number")]
+                    [(not valid-name)      (error "Invalid name for package")]
+                    [(not valid-version#)  (error "Invalid version number")]
                     [else (values valid-name valid-file-list valid-version#)]))))
 
 ;; Validate file list
@@ -32,9 +32,10 @@
 (define (valid-package-name? name)
   (let ([char-name (string->list name)])
     (cond [(null? char-name) (error "Empty package name")]
-          [(any invalid-char? char-name) (error "Invalid char in package name: ~e. Package names should only contain lowercase letters and dashes."
-                                                (any invalid-char? char-name))]
-          [(not (char-lower-case? (car char-name))) (error"Package names start with letters")]
+          [(any invalid-char? char-name) (error
+                                          "Invalid char in package name: ~e. Package names should only contain lowercase letters and dashes."
+                                          (any invalid-char? char-name))]
+          [(not (char-lower-case? (car char-name))) (error "Package names start with letters")]
           [else name])))
 
 (define (any condition ls)
@@ -90,9 +91,9 @@
   (apply values (map (curry hash-ref hash) rest)))
 
 (define (read-config path)
-  (let*-values ([(file) (open-input-file path)]
-                [(contents) (read file)]
-                [(content-hash) (make-hash contents)]
+  (let*-values ([(file)               (open-input-file path)]
+                [(contents)           (read file)]
+                [(content-hash)       (make-hash contents)]
                 [(name files version) (extract-from-hash content-hash 'name 'files 'version)])
         (package name files version)))
 
@@ -105,7 +106,7 @@
 
 (check-eq? (valid-package-name? "memes") "memes")
 (check-exn exn:fail? (thunk (valid-package-name? "Memes")))
-(check-exn exn:fail? (thunk(valid-package-name? "-oof")))
+(check-exn exn:fail? (thunk (valid-package-name? "-oof")))
 
 (check-true (version#? (unknown->version# "1.1.0")))
 (check-true (version#? (unknown->version# '1.1.0)))
@@ -115,9 +116,9 @@
 (check-true (package? (package 'my-package '() '1.0.0)))
 
 (check-true (package? (read-config "../example/test.mpm")))
-(check-true (let* ([stdlib (read-config "../example/test.mpm")]
-                   [name (package-name stdlib)]
-                   [files (package-file-list stdlib)]
+(check-true (let* ([stdlib  (read-config "../example/test.mpm")]
+                   [name    (package-name stdlib)]
+                   [files   (package-file-list stdlib)]
                    [version (package-version# stdlib)])
               (and (string=? name "std")
                    (null? files)

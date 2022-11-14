@@ -1,3 +1,3 @@
 ((name     . std)
- (files    . ())
+ (files    . (src))
  (version  . 1.0.0))
